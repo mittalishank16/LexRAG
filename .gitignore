@@ -23,3 +23,16 @@ chroma_db_legal_bot_part1
 *.json
 crewai_chatbot.ipynb
 Final_notebook.ipynb
+*.toml
+legal.py
+guide book
+.vscode
+.gitignore
+important.txt
+# Ignore local database states
+data/
+*.sqlite3
+*.bin
+
+# Ignore credentials
+.env
