@@ -1,3 +1,6 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.0
+
 # --- Web Server Backend ---
 fastapi==0.115.0
 uvicorn[standard]==0.32.0
@@ -6,7 +9,7 @@ python-multipart==0.0.12
 # --- Core LangChain & Agent Orchestration ---
 langchain==0.3.1
 langchain-community==0.3.1
-langchain-core==1.4.1
+langchain-core==0.3.6,<0.4.0
 langgraph==0.2.28
 
 # --- AI Models, Wrappers & Pipelines ---

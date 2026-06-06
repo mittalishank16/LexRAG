@@ -1,0 +1,47 @@
+#version: '3.8'
+
+services:
+  # ── 1. FASTAPI BACKEND SERVICE ─────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: lexrag_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - WATCHFILES_FORCE_POLLING=true  # Enables hot-reloading inside containers
+    depends_on:
+      - chromadb
+    restart: always
+    networks:
+      - lexrag_network
+
+  # ── 2. LOCAL CHROMADB VECTOR STORE SERVICE ─────────────────────────────────
+  chromadb:
+    image: chromadb/chroma:0.5.23
+    container_name: lexrag_chromadb
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMOUS_TELEMETRY=FALSE
+    restart: always
+    networks:
+      - lexrag_network
+
+# ── STORAGE VOLUMES & ISOLATED NETWORKS ──────────────────────────────────────
+volumes:
+  chroma_data:
+    driver: local
+
+networks:
+  lexrag_network:
+    driver: bridge
