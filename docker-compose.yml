@@ -1,47 +1,105 @@
-#version: '3.8'
+# docker-compose.yml — place in lexrag/ (repo root)
+# Usage:
+#   Start everything:    docker-compose up --build
+#   Stop everything:     docker-compose down
+#   Logs only backend:   docker-compose logs -f backend
+#   Rebuild one service: docker-compose up --build backend
 
 services:
-  # ── 1. FASTAPI BACKEND SERVICE ─────────────────────────────────────────────
+
+  # ── Backend: FastAPI + LangGraph + all ML models ───────────────────────
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: lexrag_backend
+    container_name: lexrag-backend
     ports:
       - "8000:8000"
     volumes:
+      # Live code reload during development
       - ./backend:/app
-      - ./data:/app/data
+      # Persist vector database between container restarts
+      # Without this, ChromaDB is rebuilt from scratch every restart
+      - ./data/vector_database:/data/vector_database
+      # Persist HuggingFace model cache between restarts
+      # Without this, all 3 models (~1.3GB) re-download every restart
+      - hf_model_cache:/app/.hf_cache
+      # Persist uploaded PDFs between restarts
+      - ./data/uploads:/tmp/uploads
+    environment:
+      # Override CHROMA_PERSIST_DIR to point to the mounted volume
+      - CHROMA_PERSIST_DIR=/data/vector_database
+      - HF_HOME=/app/.hf_cache
+      # APP_ENV tells the backend it is running in local Docker, not Render
+      - APP_ENV=development
     env_file:
+      # Loads all keys: GROQ_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY,
+      # PINECONE_API_KEY, EMAIL_SENDER, EMAIL_PASSWORD, EMAIL_RECEIVER, REDIS_URL
       - .env
-    environment:
-      - WATCHFILES_FORCE_POLLING=true  # Enables hot-reloading inside containers
     depends_on:
-      - chromadb
-    restart: always
-    networks:
-      - lexrag_network
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: >
+      uvicorn main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --reload-dir /app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
-  # ── 2. LOCAL CHROMADB VECTOR STORE SERVICE ─────────────────────────────────
-  chromadb:
-    image: chromadb/chroma:0.5.23
-    container_name: lexrag_chromadb
+  # ── Frontend: Next.js ──────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    container_name: lexrag-frontend
     ports:
-      - "8000:8000"
-    volumes:
-      - chroma_data:/chroma/chroma
+      - "3000:3000"
     environment:
-      - IS_PERSISTENT=TRUE
-      - ANONYMOUS_TELEMETRY=FALSE
-    restart: always
-    networks:
-      - lexrag_network
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
-# ── STORAGE VOLUMES & ISOLATED NETWORKS ──────────────────────────────────────
+  # ── Redis: caching layer ───────────────────────────────────────────────
+  redis:
+    image: redis:7.4-alpine
+    container_name: lexrag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      # Persist cache between restarts
+      # Without this, every restart clears all cached RAG responses
+      - redis_data:/data
+    command: >
+      redis-server
+      --maxmemory 50mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# ── Named volumes ──────────────────────────────────────────────────────────
+# Named volumes persist on your machine even after docker-compose down.
+# docker-compose down -v  will delete them (use only when you want a full reset)
 volumes:
-  chroma_data:
+  hf_model_cache:
     driver: local
-
-networks:
-  lexrag_network:
-    driver: bridge
+  redis_data:
+    driver: local

@@ -4,7 +4,7 @@ from pinecone import Pinecone, ServerlessSpec
 
 def get_production_vector_store(embeddings):
     pc = Pinecone(api_key=os.environ['PINECONE_API_KEY']) 
-    INDEX_NAME = 'legal-knowledge'
+    INDEX_NAME = 'lexrag'
 
     # create index if it doesnt exist
     if INDEX_NAME not in [i.name for i in pc.list_indexes()]: 

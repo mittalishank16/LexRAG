@@ -18,7 +18,7 @@ from rank_bm25 import BM25Okapi
 from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv()
-nltk.download('puntk', quiet=True)
+nltk.download('punkt', quiet=True)
 nltk.download('punkt_tab', quiet=True)
 
 #____________________________device____________________________________________________________________________
