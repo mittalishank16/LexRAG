@@ -7,7 +7,8 @@ RUN apt-get update && apt-get install -y \
     libmupdf-dev \ 
     && rm -rf /var/lib/apt/lists/* 
     
-COPY requirements.txt . 
+# Update line 10 to this:
+COPY ./requirements.txt . 
 RUN pip install --no-cache-dir -r requirements.txt 
 
 # Download NLTK data 
