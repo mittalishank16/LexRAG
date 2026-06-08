@@ -1,4 +1,5 @@
 # backend/agents/legal_graph.py
+
 import os
 import re
 import json
@@ -7,6 +8,11 @@ import hashlib
 import nltk
 import numpy as np
 import redis
+import sys
+from pathlib import Path
+
+# Force absolute module path resolution for absolute directories
+sys.path.append(str(Path(__file__).parent.parent))
 
 from typing import List, Optional, TypedDict
 from dotenv import load_dotenv
@@ -23,30 +29,26 @@ load_dotenv()
 nltk.download('punkt', quiet=True)
 
 APP_ENV = os.getenv("APP_ENV", "production")
-device = "cpu"
-print(f"Running on device: {device} | Environment: {APP_ENV}")
+print(f"Running Environment Mode: {APP_ENV}")
 
-# Fix path translation safely for local dev environments vs Docker environments
+# Set clean, predictable container working directory paths
 MODEL_PATH_INLEGALBERT = "models/inlegalbert_onnx"
 MODEL_PATH_BGE = "models/bge_onnx"
 
+# Fallback pathing translation layer for local vs container test beds
 if not os.path.exists(MODEL_PATH_INLEGALBERT) and os.path.exists(os.path.join("backend", MODEL_PATH_INLEGALBERT)):
     MODEL_PATH_INLEGALBERT = os.path.join("backend", MODEL_PATH_INLEGALBERT)
 
 if not os.path.exists(MODEL_PATH_BGE) and os.path.exists(os.path.join("backend", MODEL_PATH_BGE)):
     MODEL_PATH_BGE = os.path.join("backend", MODEL_PATH_BGE)
 
-# Initialize low-RAM ONNX embedding engines
 from models.onnx_embeddings import ONNXEmbeddings
-print(f"Loading ONNX Query Encoder from: {MODEL_PATH_INLEGALBERT}")
-query_emb = ONNXEmbeddings(MODEL_PATH_INLEGALBERT)
 
-print(f"Loading ONNX Passage Encoder from: {MODEL_PATH_BGE}")
+print("Initializing ONNX embedders...")
+query_emb = ONNXEmbeddings(MODEL_PATH_INLEGALBERT)
 passage_emb = ONNXEmbeddings(MODEL_PATH_BGE)
 
-# Lazy-loaded Cross-Encoder setup
 _cross_encoder_instance = None
-
 def get_cross_encoder():
     global _cross_encoder_instance
     if _cross_encoder_instance is None:
@@ -55,26 +57,24 @@ def get_cross_encoder():
         _cross_encoder_instance = CrossEncoder("BAAI/bge-reranker-base")
     return _cross_encoder_instance
 
-# LLM initializations
 main_llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 fast_llm = ChatGroq(model="llama-3.1-8b-instant", temperature=0, max_tokens=10)
 
 def llm(prompt: str) -> str:
     return main_llm.invoke(prompt).content
 
-# Vector Store Resolution
 index_name = os.getenv("PINECONE_INDEX_NAME", "legal-knowledge")
 
-if os.getenv("APP_ENV") == "production":
+if APP_ENV == "production":
     from langchain_pinecone import PineconeVectorStore
-    print("Connecting to production Pinecone index...")
-    legal_vs = PineconeVectorStore(index_name=index_name, embedding=passage_emb)
+    print("Connecting to production Pinecone cluster index...")
+    # Standardize parameters across Pinecone layout models
+    legal_vs = PineconeVectorStore(pinecone_index=None, index_name=index_name, embedding=passage_emb)
 else:
-    print("Connecting to local Chroma database...")
+    print("Connecting to local Chroma persistence layer...")
     persist_dir = os.getenv("CHROMA_PERSIST_DIR", "../data/vector_database")
     legal_vs = Chroma(persist_directory=persist_dir, embedding_function=passage_emb)
 
-# ── LAZY LOADED BM25 INDEX STRUCTURE ──
 def tokenize(text: str) -> list:
     return [t for t in re.findall(r'\b[a-zA-Z0-9]+\b', text.lower()) if len(t) > 1]
 
@@ -82,22 +82,20 @@ _legal_corpus = None
 _legal_bm25 = None
 
 def get_legal_bm25():
-    """Builds and caches the legal keyword index only when search fires."""
+    """Lazily initializes the BM25 matrix to keep startup RAM minimal."""
     global _legal_corpus, _legal_bm25
     if _legal_bm25 is None:
-        print("Extracting data index and generating BM25 matrix lazily...")
+        print("Extracting data index and generating BM25 matrix...")
         legal_docs_raw = legal_vs.get()
         _legal_corpus = legal_docs_raw["documents"]
         _legal_bm25 = BM25Okapi([tokenize(c) for c in _legal_corpus])
         print(f"Matrix built successfully with {len(_legal_corpus)} chunks.")
     return _legal_corpus, _legal_bm25
 
-# Document-specific indices
 doc_vs = None
 doc_bm25 = None
 doc_corpus = None
 
-# Retrieval functions
 def rrf(list_a: list, list_b: list, k: int = 60) -> list:
     scores = {}
     for rank, d in enumerate(list_a):
@@ -132,7 +130,6 @@ def rerank(query: str, docs: list, top_k: int = 6) -> list:
     ranked = sorted(zip(docs, scores), key=lambda x: x[1], reverse=True)
     return [d for d, _ in ranked[:top_k]]
 
-# Document processing
 splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100, separators=["\n\n", "\n", ". ", " ", ""])
 
 def build_document_store(file_path: str, persist_dir: str = "/tmp/doc_chroma") -> None:
@@ -155,7 +152,6 @@ def build_document_store(file_path: str, persist_dir: str = "/tmp/doc_chroma") -
     doc_bm25 = BM25Okapi([tokenize(c) for c in doc_corpus])
     print(f"Document index compiled with {len(chunks)} fragments.")
 
-# Agent State Graph definitions
 class LegalState(TypedDict):
     question: str
     uploaded_file: Optional[str]
@@ -241,8 +237,6 @@ def get_redis():
 
 def cached_rag(question: str, file_path: str = None) -> dict:
     r = get_redis()
-    
-    # Fix: Use an explicit string fallback variable to eliminate quote nesting conflicts entirely
     target_path = file_path if file_path is not None else ""
     raw_key = f"{question}{target_path}"
     cache_key = f"lexrag:{hashlib.md5(raw_key.encode()).hexdigest()}"
@@ -250,20 +244,14 @@ def cached_rag(question: str, file_path: str = None) -> dict:
     if r:
         try:
             cached = r.get(cache_key)
-            if cached: 
-                return json.loads(cached)
+            if cached: return json.loads(cached)
         except Exception:
             pass
             
     result = run_legal_rag(question, file_path)
     if r:
         try:
-            r.setex(cache_key, 3600, json.dumps({
-                "answer": result.get("answer", ""), 
-                "strategy": result.get("strategy", "LEGAL"), 
-                "critique": result.get("critique", ""), 
-                "cached": True
-            }))
+            r.setex(cache_key, 3600, json.dumps({"answer": result.get("answer", ""), "strategy": result.get("strategy", "LEGAL"), "critique": result.get("critique", ""), "cached": True}))
         except Exception:
             pass
     return result
