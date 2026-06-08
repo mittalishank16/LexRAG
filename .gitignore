@@ -36,3 +36,6 @@ data/
 
 # Ignore credentials
 .env
+backend/models/
+*.onnx
+.hf_cache/
