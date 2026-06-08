@@ -32,12 +32,12 @@ APP_ENV = os.getenv("APP_ENV", "production")
 print(f"Running Environment Mode: {APP_ENV}")
 
 # Set clean, predictable container working directory paths
-MODEL_PATH_INLEGALBERT = "models/bge_onnx" #"models/inlegalbert_onnx"
+#MODEL_PATH_INLEGALBERT = "models/bge_onnx" #"models/inlegalbert_onnx"
 MODEL_PATH_BGE = "models/bge_onnx"
 
 # Fallback pathing translation layer for local vs container test beds
-if not os.path.exists(MODEL_PATH_INLEGALBERT) and os.path.exists(os.path.join("backend", MODEL_PATH_INLEGALBERT)):
-    MODEL_PATH_INLEGALBERT = os.path.join("backend", MODEL_PATH_INLEGALBERT)
+#if not os.path.exists(MODEL_PATH_INLEGALBERT) and os.path.exists(os.path.join("backend", MODEL_PATH_INLEGALBERT)):
+    #MODEL_PATH_INLEGALBERT = os.path.join("backend", MODEL_PATH_INLEGALBERT)
 
 if not os.path.exists(MODEL_PATH_BGE) and os.path.exists(os.path.join("backend", MODEL_PATH_BGE)):
     MODEL_PATH_BGE = os.path.join("backend", MODEL_PATH_BGE)
@@ -45,8 +45,8 @@ if not os.path.exists(MODEL_PATH_BGE) and os.path.exists(os.path.join("backend",
 from models.onnx_embeddings import ONNXEmbeddings
 
 print("Initializing ONNX embedders...")
-query_emb = ONNXEmbeddings(MODEL_PATH_INLEGALBERT)
-passage_emb = ONNXEmbeddings(MODEL_PATH_BGE)
+#query_emb = ONNXEmbeddings(MODEL_PATH_INLEGALBERT)
+embedding_engine = ONNXEmbeddings(MODEL_PATH_BGE)
 
 _cross_encoder_instance = None
 def get_cross_encoder():
@@ -69,11 +69,11 @@ if APP_ENV == "production":
     from langchain_pinecone import PineconeVectorStore
     print("Connecting to production Pinecone cluster index...")
     # Standardize parameters across Pinecone layout models
-    legal_vs = PineconeVectorStore(pinecone_index=None, index_name=index_name, embedding=passage_emb)
+    legal_vs = PineconeVectorStore(pinecone_index=None, index_name=index_name, embedding=embedding_engine)
 else:
     print("Connecting to local Chroma persistence layer...")
     persist_dir = os.getenv("CHROMA_PERSIST_DIR", "../data/vector_database")
-    legal_vs = Chroma(persist_directory=persist_dir, embedding_function=passage_emb)
+    legal_vs = Chroma(persist_directory=persist_dir, embedding_function=embedding_engine)
 
 def tokenize(text: str) -> list:
     return [t for t in re.findall(r'\b[a-zA-Z0-9]+\b', text.lower()) if len(t) > 1]
@@ -147,7 +147,7 @@ def build_document_store(file_path: str, persist_dir: str = "/tmp/doc_chroma") -
             if len(chunk_text.strip()) > 30:
                 chunks.append(Document(page_content=chunk_text, metadata={**page.metadata, "source_file": os.path.basename(file_path)}))
                 
-    doc_vs = Chroma.from_documents(documents=chunks, embedding=passage_emb, persist_directory=persist_dir)
+    doc_vs = Chroma.from_documents(documents=chunks, embedding=embedding_engine, persist_directory=persist_dir)
     doc_corpus = [c.page_content for c in chunks]
     doc_bm25 = BM25Okapi([tokenize(c) for c in doc_corpus])
     print(f"Document index compiled with {len(chunks)} fragments.")
@@ -210,7 +210,7 @@ wf.add_node("critic", critic_agent)
 
 wf.set_entry_point("rewrite")
 wf.add_edge("rewrite", "strategist")
-wf.add_conditional_edges("strategist", router, {"legal": "legal", "document": "document"})
+wf.add_conditional_edges("strategist", router, {"legal": "legal", "document": "document", "BOTH": ["legal", "document"]})
 wf.add_edge("legal", "fusion")
 wf.add_edge("document", "fusion")
 wf.add_edge("fusion", "answer")
