@@ -36,6 +36,8 @@ data/
 
 # Ignore credentials
 .env
-backend/models/
+# Inside your root .gitignore
+backend/.venv/
 *.onnx
-.hf_cache/
+# FIX: Force Git to track the parts even though we ignore standard .onnx extensions
+!backend/models/inlegalbert_onnx/model_quantized.onnx.part*
