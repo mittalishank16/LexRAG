@@ -18,7 +18,7 @@ RUN python -c "import nltk; nltk.download('punkt')"
 RUN mkdir -p models/inlegalbert_onnx
 
 # 2. Copy the tokenizer configurations and split parts from your workspace
-COPY backend/models/inlegalbert_onnx/ /app/models/inlegalbert_onnx/
+COPY models/inlegalbert_onnx/ /app/models/inlegalbert_onnx/
 
 # 3. Concatenate the split parts back into the single functional model.onnx binary
 RUN cat /app/models/inlegalbert_onnx/model_quantized.onnx.part* > /app/models/inlegalbert_onnx/model_quantized.onnx
