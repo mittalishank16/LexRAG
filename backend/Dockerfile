@@ -22,8 +22,9 @@ RUN mkdir -p models/inlegalbert_onnx models/bge_onnx
 COPY models/inlegalbert_onnx/ /app/models/inlegalbert_onnx/
 COPY models/bge_onnx/ /app/models/bge_onnx/
 
-RUN cat /app/models/inlegalbert_onnx/model_quantized.onnx.part* > /app/models/inlegalbert_onnx/model_quantized.onnx
-RUN cat /app/models/bge_onnx/model_quantized.onnx.part* > /app/models/bge_onnx/model_quantized.onnx
+# Use sequential appending to stream bytes instead of bundling with cat
+RUN for f in /app/models/inlegalbert_onnx/model_quantized.onnx.part*; do cat "$f" >> /app/models/inlegalbert_onnx/model_quantized.onnx; rm "$f"; done
+RUN for f in /app/models/bge_onnx/model_quantized.onnx.part*; do cat "$f" >> /app/models/bge_onnx/model_quantized.onnx; rm "$f"; done
 
 RUN rm -f /app/models/inlegalbert_onnx/model_quantized.onnx.part*
 RUN rm -f /app/models/bge_onnx/model_quantized.onnx.part*
