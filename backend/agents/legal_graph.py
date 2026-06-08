@@ -241,18 +241,29 @@ def get_redis():
 
 def cached_rag(question: str, file_path: str = None) -> dict:
     r = get_redis()
-    cache_key = f"lexrag:{hashlib.md5(f'{question}{file_path or ""}'.encode()).hexdigest()}"
+    
+    # Fix: Use an explicit string fallback variable to eliminate quote nesting conflicts entirely
+    target_path = file_path if file_path is not None else ""
+    raw_key = f"{question}{target_path}"
+    cache_key = f"lexrag:{hashlib.md5(raw_key.encode()).hexdigest()}"
+    
     if r:
         try:
             cached = r.get(cache_key)
-            if cached: return json.loads(cached)
+            if cached: 
+                return json.loads(cached)
         except Exception:
             pass
             
     result = run_legal_rag(question, file_path)
     if r:
         try:
-            r.setex(cache_key, 3600, json.dumps({"answer": result.get("answer", ""), "strategy": result.get("strategy", "LEGAL"), "critique": result.get("critique", ""), "cached": True}))
+            r.setex(cache_key, 3600, json.dumps({
+                "answer": result.get("answer", ""), 
+                "strategy": result.get("strategy", "LEGAL"), 
+                "critique": result.get("critique", ""), 
+                "cached": True
+            }))
         except Exception:
             pass
     return result
