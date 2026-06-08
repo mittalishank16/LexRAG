@@ -17,6 +17,8 @@ wheels/
 uv.lock
 reference
 chroma_db
+doc_chroma
+previous_iterations
 legalRAG
 7be5eb54-7429-444b-afe3-a1ec79bdeeb2
 chroma_db_legal_bot_part1
