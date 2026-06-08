@@ -5,8 +5,6 @@
 # ── PyTorch (CPU-only slim build — required for Render free tier) ──────────
 # The --extra-index-url tells pip to look here for the +cpu build.
 # Without this, pip downloads the full CUDA build (~2GB) even on CPU servers.
---index-url https://download.pytorch.org/whl/cpu
-torch==2.4.0
 
 # ── ONNX Runtime (replaces PyTorch for embedding model inference) ──────────
 # InLegalBERT + BGE-Base run via ONNX Runtime instead of PyTorch.
@@ -64,3 +62,7 @@ pydantic==2.13.4
 numpy==1.26.4
 scikit-learn==1.9.0
 nltk==3.9.1
+
+# Force pip to check the PyTorch CPU index as an extra source
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.4.0
