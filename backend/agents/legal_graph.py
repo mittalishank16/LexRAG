@@ -32,7 +32,7 @@ APP_ENV = os.getenv("APP_ENV", "production")
 print(f"Running Environment Mode: {APP_ENV}")
 
 # Set clean, predictable container working directory paths
-MODEL_PATH_INLEGALBERT = "models/inlegalbert_onnx"
+MODEL_PATH_INLEGALBERT = "models/bge_onnx" #"models/inlegalbert_onnx"
 MODEL_PATH_BGE = "models/bge_onnx"
 
 # Fallback pathing translation layer for local vs container test beds
