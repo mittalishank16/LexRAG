@@ -8,6 +8,8 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
+      - key: PYTHONPATH
+        value: .
       - key: GROQ_API_KEY
         sync: false
       - key: SUPABASE_URL
