@@ -42,7 +42,7 @@ if not os.path.exists(MODEL_PATH_INLEGALBERT) and os.path.exists(os.path.join("b
 if not os.path.exists(MODEL_PATH_BGE) and os.path.exists(os.path.join("backend", MODEL_PATH_BGE)):
     MODEL_PATH_BGE = os.path.join("backend", MODEL_PATH_BGE)
 
-from models.onnx_embeddings import ONNXEmbeddings
+from backend.models.onnx_embeddings import ONNXEmbeddings
 
 print("Initializing ONNX embedders...")
 query_emb = ONNXEmbeddings(MODEL_PATH_INLEGALBERT)
