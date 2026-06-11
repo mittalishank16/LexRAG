@@ -20,7 +20,7 @@ nltk.download('punkt', quiet=True)
 nltk.download('punkt_tab', quiet=True)
 
 
-HF_API_KEY  = os.getenv('HUGGINGFACEHUB_API_TOKEN')          # required
+HF_API_KEY  = os.getenv('HF_TOKEN')          # required
 HF_EMB_URL  = os.getenv(                                 # embedding model endpoint
     'HF_EMBEDDING_URL',
     'https://api-inference.huggingface.co/models/BAAI/bge-base-en-v1.5',
