@@ -111,10 +111,25 @@ def tokenize(text):
     return [t for t in re.findall(r'\b[a-zA-Z0-9]+\b', text.lower()) if len(t) > 1]
 
 
-_raw         = legal_vs.get()
-legal_corpus = _raw['documents']
-legal_bm25   = BM25Okapi([tokenize(c) for c in legal_corpus])
-print(f'Legal knowledge base: {len(legal_corpus)} chunks')
+# Safely check for local Chroma documents if they exist
+try:
+    _raw         = legal_vs.get()
+    legal_corpus = _raw['documents'] if _raw and 'documents' in _raw else []
+except Exception as e:
+    print(f"Note: Skipping local disk corpus collection fetch: {e}")
+    legal_corpus = []
+
+# Prevent ZeroDivisionError by assigning a safe empty fallback tracker if the corpus size is 0
+if len(legal_corpus) > 0:
+    legal_bm25 = BM25Okapi([tokenize(c) for c in legal_corpus])
+else:
+    print("Legal knowledge base local corpus is empty. Initializing empty BM25 fallback.")
+    class EmptyBM25:
+        def get_scores(self, query_tokens):
+            return []
+    legal_bm25 = EmptyBM25()
+
+print(f'Legal knowledge base: {len(legal_corpus)} chunks parsed.')
 
 
 # ── Document store (per uploaded file) ───────────────────────────────────
