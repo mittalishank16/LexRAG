@@ -66,3 +66,4 @@ nltk==3.9.1
 # Force pip to check the PyTorch CPU index as an extra source
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.4.0
+sendgrid
