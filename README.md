@@ -18,6 +18,13 @@ LexRAG is an end-to-end intelligent legal research assistant that combines **InL
 User Question → Rewrite → Strategist → [Legal KB | Document | Both] → Fusion → Answer → Critic
 ```
 
+## Live Demo
+
+| Service | URL |
+|---|---|
+| Dashboard | `https://lexrag-pi.vercel.app/` |
+| API (Swagger UI) | `https://lexrag-ut6u.onrender.com/` |
+
 ---
 
 ## Table of Contents
@@ -119,9 +126,7 @@ User Question → Rewrite → Strategist → [Legal KB | Document | Both] → Fu
 - Background thread test email fired 2 minutes after upload
 
 **Production Engineering**
-- InLegalBERT + BGE-Base converted to ONNX INT8 — fits in 512MB Render free tier
-- ONNX model files split into <100MB parts for GitHub upload, reassembled at Docker build time
-- Lazy cross-encoder loading — health check passes before full model load
+- BGE-Base 
 - ChromaDB (local dev) ↔ Pinecone (production) automatic switch via `APP_ENV`
 - RAGAS evaluation suite — faithfulness, answer relevancy, context recall, answer correctness
 - Full CI/CD via GitHub Actions — tests must pass before Render deploys
@@ -132,8 +137,8 @@ User Question → Rewrite → Strategist → [Legal KB | Document | Both] → Fu
 
 | Layer | Technology |
 |-------|-----------|
-| **Query Embedding** | InLegalBERT (law-ai/InLegalBERT) via ONNX Runtime INT8 |
-| **Passage Embedding** | BGE-Base-en-v1.5 via ONNX Runtime INT8 |
+| **Query Embedding** | BGE-Base-en-v1.5 |
+| **Passage Embedding** | BGE-Base-en-v1.5 |
 | **Reranker** | BGE-Reranker-Base (CrossEncoder, lazy loaded) |
 | **LLM** | Groq · Llama-3.3-70b-versatile + Llama-3.1-8b-instant |
 | **Agent Framework** | LangGraph 0.2.28 |

@@ -61,19 +61,12 @@ export default function HomePage() {
 
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#2E75B6]/30 bg-[#2E75B6]/10 text-[#7BB3E0] text-sm mb-8">
           <span className="w-2 h-2 rounded-full bg-[#2E75B6] animate-pulse" />
-          Powered by InLegalBERT · LangGraph · Groq Llama 3.3
+          Powered by LangGraph · Groq Llama 3.3
         </div>
 
         <h1 className="text-6xl font-bold leading-tight mb-6 tracking-tight"
           style={{ fontFamily: "'Georgia', serif" }}>
-          Indian Legal Intelligence,{" "}
-          <span style={{
-            background: "linear-gradient(135deg, #2E75B6, #7BB3E0)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}>
-            Finally Accessible
-          </span>
+          Indian Legal Intelligence
         </h1>
 
         <p className="text-lg text-white/50 max-w-2xl mx-auto leading-relaxed mb-10">
@@ -170,36 +163,6 @@ export default function HomePage() {
               Analyse contracts →
             </div>
           </Link>
-        </div>
-      </section>
-
-      {/* ── Tech stack ───────────────────────────────────────────────────── */}
-      <section className="relative z-10 max-w-5xl mx-auto px-8 pb-20">
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] p-8">
-          <h3 className="text-sm uppercase tracking-widest text-white/30 mb-6 text-center">
-            Architecture
-          </h3>
-          <div className="grid grid-cols-3 gap-6 text-sm">
-            {[
-              { layer: "Embeddings", tech: "InLegalBERT + BGE-Base-en" },
-              { layer: "Vector DB", tech: "ChromaDB → Pinecone" },
-              { layer: "LLM", tech: "Groq Llama 3.3 70B" },
-              { layer: "Agent Framework", tech: "LangGraph 7-node DAG" },
-              { layer: "Backend", tech: "FastAPI + Render" },
-              { layer: "Frontend", tech: "Next.js 14 + Vercel" },
-              { layer: "Database", tech: "Supabase (Postgres)" },
-              { layer: "Evaluation", tech: "RAGAS 0.2.x" },
-              { layer: "Email", tech: "Gmail SMTP (smtplib)" },
-            ].map(({ layer, tech }) => (
-              <div key={layer} className="flex gap-3 items-start">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#2E75B6] mt-1.5 shrink-0" />
-                <div>
-                  <div className="text-white/30 text-xs uppercase tracking-wide">{layer}</div>
-                  <div className="text-white/70 mt-0.5">{tech}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
