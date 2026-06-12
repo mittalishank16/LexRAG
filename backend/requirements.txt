@@ -42,6 +42,7 @@ langchain-chroma==0.1.4
 pinecone-client==5.0.1
 langchain-pinecone==0.2.0
 rank-bm25==0.2.2
+huggingface-hub>=0.20.0
 
 # ── Storage & database ────────────────────────────────────────────────────
 supabase==2.7.4
