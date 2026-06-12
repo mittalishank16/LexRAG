@@ -12,7 +12,7 @@
 
 ---
 
-LexRAG is an end-to-end intelligent legal research assistant that combines **InLegalBERT** (domain-specific Indian law embeddings) with a **7-node LangGraph agentic pipeline** to deliver grounded, cited answers from the Indian Constitution, IPC, CrPC, Evidence Act, and user-uploaded documents. It includes a standalone **Contract Intelligence** module with automated Gmail renewal reminders.
+LexRAG is an end-to-end intelligent legal research assistant with a **7-node LangGraph agentic pipeline** to deliver grounded, cited answers from the Indian Constitution, IPC, CrPC, Evidence Act, and user-uploaded documents. It includes a standalone **Contract Intelligence** module with automated Gmail renewal reminders.
 
 ```
 User Question → Rewrite → Strategist → [Legal KB | Document | Both] → Fusion → Answer → Critic
